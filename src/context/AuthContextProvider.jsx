@@ -67,8 +67,23 @@ export default function AuthProvider({ children }) {
     }
   }
 
+  async function editUser(user) {
+    try {
+      const response = await axios.put(`${VITE_API_URL}/users/profile`, user, {
+        timeout: 10000,
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      return response.data;
+    } catch (error) {
+      return error.response.data.error;
+    }
+  }
+
   return (
-    <authContext.Provider value={{ signUpUser, loginUser, authenticateUser, getPostsByUser }}>
+    <authContext.Provider value={{ signUpUser, loginUser, authenticateUser, getPostsByUser, editUser }}>
       {children}
     </authContext.Provider>
   );
