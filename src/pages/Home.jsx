@@ -1,13 +1,13 @@
 import { useState, useEffect, useContext, useCallback } from 'react';
+// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import logo from '@/assets/logo.svg';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 import {
   Dialog,
   DialogContent,
@@ -45,6 +45,7 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import { postContext } from '@/context/PostContextProvider';
 import { toast } from 'sonner';
+import { CreatePostForm } from '@/components/CreatePostForm';
 
 const postTypes = [
   { value: 'recommendation', label: 'Recommendation', icon: Sparkles },
@@ -168,6 +169,7 @@ export default function HomePage() {
           return post;
         })
       );
+      // eslint-disable-next-line no-unused-vars
     } catch (error) {
       toast.error('Something went wrong!');
     }
@@ -258,124 +260,6 @@ export default function HomePage() {
     }
   };
 
-  const CreatePostForm = ({ isModal = false }) => (
-    <Card className={`border-yellow-200 shadow-lg ${isModal ? 'border-0 shadow-none' : ''}`}>
-      <CardHeader className="pb-3 px-3 sm:px-6">
-        <div className="flex items-start space-x-3">
-          <Avatar className="h-8 w-8 sm:h-10 sm:w-10 border-2 border-yellow-400 flex-shrink-0">
-            <AvatarImage src={user.profilePicture} alt="You" />
-            <AvatarFallback className="bg-yellow-100 text-black text-xs sm:text-sm">
-              {user.name ? user.name.charAt(0) : user.username.charAt(0)}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0 space-y-3">
-            <div className="flex items-center space-x-2">
-              <Label htmlFor="post-type" className="text-sm font-medium text-gray-700">
-                Post Type:
-              </Label>
-              <Select value={postType} onValueChange={setPostType}>
-                <SelectTrigger className="w-40 h-8 border-yellow-200 focus:border-yellow-400">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {postTypes.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      <div className="flex items-center space-x-2">
-                        <span>{type.label}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {/* Content Area */}
-            <Textarea
-              placeholder={`What's on your mind? ${postTypes.find((t) => t.value === postType)?.description || ''}`}
-              value={postContent}
-              onChange={(e) => setPostContent(e.target.value)}
-              className="min-h-[60px] sm:min-h-[80px] border-yellow-200 focus:border-yellow-400 resize-none text-sm sm:text-base"
-            />
-            {/* Location Input */}
-            <div className="flex items-center space-x-2">
-              <MapPin className="h-4 w-4 text-yellow-600" />
-              <Input
-                placeholder="Add location..."
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                className="border-yellow-200 focus:border-yellow-400 text-sm"
-              />
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="file"
-                  id="image-upload"
-                  multiple
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => document.getElementById('image-upload')?.click()}
-                  className="border-yellow-300 hover:bg-yellow-50"
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Add Photos
-                </Button>
-              </div>
-
-              {/* Image Preview */}
-              {selectedImages.length > 0 && (
-                <div className="grid grid-cols-2 gap-2">
-                  {selectedImages.map((image, index) => (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="relative group"
-                    >
-                      <img
-                        src={image.url}
-                        alt={`Upload ${index + 1}`}
-                        className="w-full h-24 object-cover rounded-lg"
-                      />
-                      <Button
-                        size="icon"
-                        variant="destructive"
-                        className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => removeImage(index)}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </motion.div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </CardHeader>
-
-      <CardFooter className="pt-0 px-3 sm:px-6">
-        <div className="flex justify-end w-full">
-          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-            <Button
-              onClick={handleCreatePost}
-              disabled={!postContent.trim()}
-              className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-black hover:from-yellow-500 hover:to-yellow-600 disabled:opacity-50 text-sm sm:text-base shadow-lg"
-            >
-              <Send className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-              Post
-            </Button>
-          </motion.div>
-        </div>
-      </CardFooter>
-    </Card>
-  );
-
   return (
     <div>
       <motion.header
@@ -385,32 +269,7 @@ export default function HomePage() {
       >
         <div className="mx-auto px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-between">
           <motion.div whileHover={{ scale: 1.05 }} className="flex items-center space-x-2">
-            <svg xmlns="http://www.w3.org/2000/svg" width="42" height="42" viewBox="0 0 42 42" fill="none">
-              <g clip-path="url(#clip0_72_1619)">
-                <rect width="42" height="42" rx="8" fill="#FFCC29"></rect>
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M30.5264 22.1245V30.359H22.292V33.6802H30.5264H33.8477V30.359V22.1245H30.5264Z"
-                  fill="#0C0C0C"
-                ></path>
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M8.13477 8.302V11.6233V19.8577H11.456V11.6233H19.6904V8.302H11.456H8.13477Z"
-                  fill="#0C0C0C"
-                ></path>
-                <path
-                  d="M19.275 22.3963C19.275 23.9682 19.8334 25.1265 21.1364 25.1265C22.2119 25.1265 22.9772 24.5267 23.9699 23.3064L24.3629 23.6786C23.3701 25.3125 21.8603 26.6776 19.9161 26.6776C17.7238 26.6776 16.4414 25.0851 16.4414 22.8514C16.4414 19.1491 19.337 15.3022 22.9565 15.3022C24.5077 15.3022 25.5418 15.9433 25.5418 17.1844C25.5418 18.0116 25.0041 18.5287 24.1974 18.7149H23.5976C23.701 17.267 23.5356 16.0261 22.5014 16.0261C20.7434 16.0261 19.275 19.6249 19.275 22.3963Z"
-                  fill="#0C0C0C"
-                ></path>
-              </g>
-              <defs>
-                <clipPath id="clip0_72_1619">
-                  <rect width="42" height="42" rx="8" fill="white"></rect>
-                </clipPath>
-              </defs>
-            </svg>
+            <img src={logo} alt="CityScope" className="h-10 w-10" />
             <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-black to-gray-700 bg-clip-text text-transparent">
               CityScope
             </span>
@@ -462,7 +321,7 @@ export default function HomePage() {
                   <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                     <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                       <Avatar className="h-10 w-10 border-2 border-yellow-400 shadow-lg">
-                        <AvatarImage src={user.profilePicture} alt="User" />
+                        <AvatarImage src={user.profilePic} alt="User" />
                         <AvatarFallback className="bg-gradient-to-r from-yellow-100 to-yellow-200 text-black">
                           {user.name ? user.name.charAt(0) : user.username.charAt(0)}
                         </AvatarFallback>
@@ -470,14 +329,14 @@ export default function HomePage() {
                     </Button>
                   </motion.div>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end">
+                <DropdownMenuContent className="w-56 bg-white border border-yellow-400" align="end">
                   <Link to="/profile">
                     <DropdownMenuItem className="hover:bg-yellow-50">
                       <User className="mr-2 h-4 w-4" />
                       <span>Profile</span>
                     </DropdownMenuItem>
                   </Link>
-                  <DropdownMenuSeparator />
+                  <DropdownMenuSeparator className="bg-gray-200" />
                   <DropdownMenuItem className="hover:bg-red-50 text-red-600" onClick={() => logout()}>
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Log out</span>
@@ -499,12 +358,24 @@ export default function HomePage() {
         </div>
       </motion.header>
 
-      {/* Main Content */}
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-2xl">
         <div className="space-y-4 sm:space-y-8">
           {isLoggedIn && (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-              <CreatePostForm />
+              <CreatePostForm
+                isModal={false}
+                user={user}
+                postContent={postContent}
+                setPostContent={setPostContent}
+                location={location}
+                setLocation={setLocation}
+                selectedImages={selectedImages}
+                handleImageUpload={handleImageUpload}
+                removeImage={removeImage}
+                handleCreatePost={handleCreatePost}
+                postType={postType}
+                setPostType={setPostType}
+              />
             </motion.div>
           )}
 
@@ -572,13 +443,13 @@ export default function HomePage() {
                         <div className="flex items-start sm:items-center justify-between gap-2 sm:gap-3">
                           <div className="flex items-start sm:items-center gap-2 sm:gap-3 min-w-0 flex-1">
                             <Avatar className="h-8 w-8 sm:h-10 sm:w-10 border-2 border-yellow-400 flex-shrink-0 shadow-lg">
-                              <AvatarImage src={post.author?.profilePicture} alt={post.author.name} />
+                              <AvatarImage src={post.author?.profilePic} alt={post.author.name} />
                               <AvatarFallback className="bg-gradient-to-r from-yellow-100 to-yellow-200 text-black text-xs sm:text-sm">
                                 {post.author.name.charAt(0)}
                               </AvatarFallback>
                             </Avatar>
                             <div className="min-w-0 flex-1">
-                              <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2">
+                              <div className="flex sm:flex-row sm:items-center gap-0.5 sm:gap-2 sm:justify-between">
                                 <p className="font-semibold text-black text-sm sm:text-base truncate">
                                   {post.author.name}
                                 </p>
@@ -749,7 +620,20 @@ export default function HomePage() {
                   </DialogTitle>
                   <DialogDescription>Share what's on your mind with your followers</DialogDescription>
                 </DialogHeader>
-                <CreatePostForm isModal={true} />
+                <CreatePostForm
+                  isModal={true}
+                  user={user}
+                  postContent={postContent}
+                  setPostContent={setPostContent}
+                  location={location}
+                  setLocation={setLocation}
+                  selectedImages={selectedImages}
+                  handleImageUpload={handleImageUpload}
+                  removeImage={removeImage}
+                  handleCreatePost={handleCreatePost}
+                  postType={postType}
+                  setPostType={setPostType}
+                />
               </DialogContent>
             </Dialog>
           </motion.div>
@@ -775,7 +659,7 @@ export default function HomePage() {
                   className="flex space-x-3"
                 >
                   <Avatar className="h-8 w-8 border-2 border-yellow-400 flex-shrink-0">
-                    <AvatarImage src={comment.user?.profilePicture} alt={comment.user?.name} />
+                    <AvatarImage src={comment.user?.profilePic} alt={comment.user?.name} />
                     <AvatarFallback className="bg-gradient-to-r from-yellow-100 to-yellow-200 text-black text-xs">
                       {comment.user?.name?.charAt(0) || 'U'}
                     </AvatarFallback>
@@ -807,7 +691,7 @@ export default function HomePage() {
               <div className="border-t border-yellow-200 p-4">
                 <div className="flex space-x-3">
                   <Avatar className="h-8 w-8 border-2 border-yellow-400 flex-shrink-0">
-                    <AvatarImage src={user.profilePicture} alt={user.name} />
+                    <AvatarImage src={user.profilePic} alt={user.name} />
                     <AvatarFallback className="bg-gradient-to-r from-yellow-100 to-yellow-200 text-black text-xs">
                       {user.name ? user.name.charAt(0) : user.username.charAt(0)}
                     </AvatarFallback>
