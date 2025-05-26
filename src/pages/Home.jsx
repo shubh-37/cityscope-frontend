@@ -1,29 +1,30 @@
-import { useState, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
-import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useState, useEffect, useContext, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
+  DialogTrigger
+} from '@/components/ui/dialog';
+import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import {
   User,
   LogIn,
@@ -31,142 +32,243 @@ import {
   Filter,
   Heart,
   MessageCircle,
-  Share2,
-  Bookmark,
-  Video,
-  Smile,
   Send,
-  TrendingUp,
-  Clock,
-  Users,
   Plus,
   MapPin,
   Upload,
-  FileText,
-  BarChart3,
-  Camera,
   X,
   Sparkles,
-} from "lucide-react"
-
-const mockPosts = [
-  {
-    id: 1,
-    user: { name: "Alex Chen", username: "@alexchen", avatar: "/placeholder.svg?height=40&width=40" },
-    content:
-      "Just launched my new project! 🚀 Excited to share it with everyone. The journey has been incredible and I can't wait to see what's next!",
-    image: "/placeholder.svg?height=300&width=500",
-    likes: 124,
-    comments: 23,
-    shares: 12,
-    timestamp: "2h ago",
-    tags: ["#launch", "#project", "#excited"],
-    type: "text",
-    location: "San Francisco, CA",
-  },
-  {
-    id: 2,
-    user: { name: "Sarah Johnson", username: "@sarahj", avatar: "/placeholder.svg?height=40&width=40" },
-    content:
-      "Beautiful sunset from my balcony today. Sometimes you need to pause and appreciate the simple moments in life. 🌅",
-    image: "/placeholder.svg?height=300&width=500",
-    likes: 89,
-    comments: 15,
-    shares: 8,
-    timestamp: "4h ago",
-    tags: ["#sunset", "#peaceful", "#gratitude"],
-    type: "photo",
-    location: "Miami Beach, FL",
-  },
-  {
-    id: 3,
-    user: { name: "Mike Rodriguez", username: "@mikerod", avatar: "/placeholder.svg?height=40&width=40" },
-    content:
-      "Working on some new designs for the upcoming conference. The creative process never gets old! What do you think about this color palette?",
-    likes: 67,
-    comments: 31,
-    shares: 5,
-    timestamp: "6h ago",
-    tags: ["#design", "#creative", "#conference"],
-    type: "text",
-  },
-]
-
-const filterOptions = [
-  { label: "Trending", icon: TrendingUp, value: "trending" },
-  { label: "Recent", icon: Clock, value: "recent" },
-  { label: "Following", icon: Users, value: "following" },
-]
+  Loader2,
+  HelpCircle,
+  Calendar
+} from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { postContext } from '@/context/PostContextProvider';
+import { toast } from 'sonner';
 
 const postTypes = [
-  { value: "text", label: "Text Post", icon: FileText, description: "Share your thoughts" },
-  { value: "photo", label: "Photo Post", icon: Camera, description: "Share a moment" },
-  { value: "video", label: "Video Post", icon: Video, description: "Share a video" },
-  { value: "poll", label: "Poll Post", icon: BarChart3, description: "Ask your audience" },
-]
+  { value: 'recommendation', label: 'Recommendation', icon: Sparkles },
+  { value: 'ask_for_help', label: 'Ask for Help', icon: HelpCircle },
+  { value: 'local_update', label: 'Local Update', icon: MapPin },
+  { value: 'event_announcement', label: 'Event Announcement', icon: Calendar }
+];
 
 export default function HomePage() {
-  const [isLoggedIn, setIsLoggedIn] = useState(true)
-  const [postContent, setPostContent] = useState("")
-  const [selectedFilter, setSelectedFilter] = useState("trending")
-  const [likedPosts, setLikedPosts] = useState([])
-  const [savedPosts, setSavedPosts] = useState([])
-  const [showFAB, setShowFAB] = useState(false)
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [postType, setPostType] = useState("text")
-  const [location, setLocation] = useState("")
-  const [selectedImages, setSelectedImages] = useState([])
+  const isLoggedIn = localStorage.getItem('token') ? true : false;
+  const user = JSON.parse(localStorage.getItem('user'));
+  const { getPosts, createPost, likeUnlikePost, createComment } = useContext(postContext);
+  const [postContent, setPostContent] = useState('');
+  const [posts, setPosts] = useState([]);
+  const [selectedFilter, setSelectedFilter] = useState('');
+  const [showFAB, setShowFAB] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [postType, setPostType] = useState('text');
+  const [location, setLocation] = useState('');
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
+  const [isCommentsOpen, setIsCommentsOpen] = useState(false);
+  const [selectedPostComments, setSelectedPostComments] = useState(null);
+  const [commentText, setCommentText] = useState('');
 
+  // Infinite scrolling states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [hasNextPage, setHasNextPage] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+
+  const navigate = useNavigate();
+
+  // Scroll detection for floating action button and infinite scroll
   useEffect(() => {
     const handleScroll = () => {
-      const scrollY = window.scrollY
-      setShowFAB(scrollY > 200)
+      const scrollY = window.scrollY;
+      setShowFAB(scrollY > 200);
+
+      // Check if user has scrolled to bottom for infinite scroll
+      const scrollHeight = document.documentElement.scrollHeight;
+      const scrollTop = document.documentElement.scrollTop;
+      const clientHeight = document.documentElement.clientHeight;
+
+      // Trigger load more when user is 100px from bottom
+      if (scrollHeight - scrollTop <= clientHeight + 100) {
+        loadMorePosts();
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [currentPage, loading, hasNextPage]);
+
+  // Fetch initial posts
+  const fetchPosts = async (page = 1, reset = true) => {
+    try {
+      if (page === 1) {
+        setInitialLoading(true);
+      } else {
+        setLoading(true);
+      }
+
+      const response = await getPosts({ page, limit: 10, type: selectedFilter });
+
+      if (reset) {
+        setPosts(response.posts);
+      } else {
+        setPosts((prev) => [...prev, ...response.posts]);
+      }
+
+      setHasNextPage(response.pagination.hasNextPage);
+      setCurrentPage(page);
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+      toast.error('Failed to load posts');
+    } finally {
+      setLoading(false);
+      setInitialLoading(false);
     }
+  };
 
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
+  // Load more posts for infinite scroll
+  const loadMorePosts = useCallback(async () => {
+    if (loading || !hasNextPage) return;
 
-  const handleLike = (postId) => {
-    setLikedPosts((prev) => (prev.includes(postId) ? prev.filter((id) => id !== postId) : [...prev, postId]))
-  }
+    const nextPage = currentPage + 1;
+    await fetchPosts(nextPage, false);
+  }, [currentPage, loading, hasNextPage]);
 
-  const handleSave = (postId) => {
-    setSavedPosts((prev) => (prev.includes(postId) ? prev.filter((id) => id !== postId) : [...prev, postId]))
-  }
+  // Initial load
+  useEffect(() => {
+    fetchPosts(1, true);
+  }, [selectedFilter]); // Refetch when filter changes
 
-  const handleCreatePost = () => {
-    if (postContent.trim()) {
-      // Handle post creation logic here
-      setPostContent("")
-      setLocation("")
-      setSelectedImages([])
-      setIsModalOpen(false)
+  const handleLike = async (postId) => {
+    try {
+      await likeUnlikePost(postId);
+      setPosts((prevPosts) =>
+        prevPosts.map((post) => {
+          if (post._id === postId) {
+            const userId = user.id;
+
+            // Check if user already liked the post
+            const alreadyLiked = post.likes.some((like) => like.user._id === userId);
+
+            let updatedLikes;
+            if (alreadyLiked) {
+              // Unlike: remove user from likes
+              updatedLikes = post.likes.filter((like) => like.user._id !== userId);
+            } else {
+              // Like: add user to likes
+              updatedLikes = [...post.likes, { user: { _id: userId } }];
+            }
+
+            return {
+              ...post,
+              likes: updatedLikes
+            };
+          }
+          return post;
+        })
+      );
+    } catch (error) {
+      toast.error('Something went wrong!');
     }
-  }
+  };
+
+  const handleOpenComments = (post) => {
+    setSelectedPostComments(post);
+    setIsCommentsOpen(true);
+  };
+
+  const handleCreatePost = async () => {
+    const formData = new FormData();
+    formData.append('content', postContent);
+    formData.append('location', location);
+    formData.append('type', postType);
+
+    // Store the actual File objects instead of just URLs
+    if (selectedImages.length > 0) {
+      selectedImages.forEach((image) => {
+        formData.append('images', image.file);
+      });
+    }
+    const response = await createPost(formData);
+    if (response.success) {
+      // Reset form state
+      setPostContent('');
+      setLocation('');
+      setSelectedImages([]);
+      setPostType('');
+      toast.success(response.message);
+      await fetchPosts(1, true);
+      setIsModalOpen(false);
+    }
+  };
+
+  const logout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/login');
+  };
 
   const handleImageUpload = (event) => {
-    const files = event.target.files
+    const files = event.target.files;
     if (files) {
-      const newImages = Array.from(files).map((file) => URL.createObjectURL(file))
-      setSelectedImages((prev) => [...prev, ...newImages])
+      const newImages = Array.from(files).map((file) => ({
+        url: URL.createObjectURL(file),
+        file: file
+      }));
+      setSelectedImages((prev) => [...prev, ...newImages]);
     }
-  }
+  };
 
   const removeImage = (index) => {
-    setSelectedImages((prev) => prev.filter((_, i) => i !== index))
-  }
+    setSelectedImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleAddComment = async () => {
+    if (!commentText.trim()) return;
+
+    try {
+      const response = await createComment(selectedPostComments._id, { content: commentText });
+      if (response.success) {
+        // Update the posts array with the new comment
+        setPosts(
+          posts.map((post) => {
+            if (post._id === selectedPostComments._id) {
+              return {
+                ...post,
+                comments: [...post.comments, response.comment]
+              };
+            }
+            return post;
+          })
+        );
+
+        // Update the selected post comments
+        setSelectedPostComments((prev) => ({
+          ...prev,
+          comments: [...prev.comments, response.comment]
+        }));
+
+        setCommentText('');
+        toast.success('Comment added successfully');
+      }
+    } catch (err) {
+      console.error('Error adding comment:', err);
+      toast.error('Failed to add comment');
+    }
+  };
 
   const CreatePostForm = ({ isModal = false }) => (
-    <Card className={`border-yellow-200 shadow-lg ${isModal ? "border-0 shadow-none" : ""}`}>
+    <Card className={`border-yellow-200 shadow-lg ${isModal ? 'border-0 shadow-none' : ''}`}>
       <CardHeader className="pb-3 px-3 sm:px-6">
         <div className="flex items-start space-x-3">
           <Avatar className="h-8 w-8 sm:h-10 sm:w-10 border-2 border-yellow-400 flex-shrink-0">
-            <AvatarImage src="/placeholder.svg?height=40&width=40" alt="You" />
-            <AvatarFallback className="bg-yellow-100 text-black text-xs sm:text-sm">JD</AvatarFallback>
+            <AvatarImage src={user.profilePicture} alt="You" />
+            <AvatarFallback className="bg-yellow-100 text-black text-xs sm:text-sm">
+              {user.name ? user.name.charAt(0) : user.username.charAt(0)}
+            </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0 space-y-3">
-            {/* Post Type Selector */}
             <div className="flex items-center space-x-2">
               <Label htmlFor="post-type" className="text-sm font-medium text-gray-700">
                 Post Type:
@@ -179,7 +281,6 @@ export default function HomePage() {
                   {postTypes.map((type) => (
                     <SelectItem key={type.value} value={type.value}>
                       <div className="flex items-center space-x-2">
-                        <type.icon className="h-4 w-4" />
                         <span>{type.label}</span>
                       </div>
                     </SelectItem>
@@ -187,15 +288,13 @@ export default function HomePage() {
                 </SelectContent>
               </Select>
             </div>
-
             {/* Content Area */}
             <Textarea
-              placeholder={`What's on your mind? ${postTypes.find((t) => t.value === postType)?.description || ""}`}
+              placeholder={`What's on your mind? ${postTypes.find((t) => t.value === postType)?.description || ''}`}
               value={postContent}
               onChange={(e) => setPostContent(e.target.value)}
               className="min-h-[60px] sm:min-h-[80px] border-yellow-200 focus:border-yellow-400 resize-none text-sm sm:text-base"
             />
-
             {/* Location Input */}
             <div className="flex items-center space-x-2">
               <MapPin className="h-4 w-4 text-yellow-600" />
@@ -206,123 +305,112 @@ export default function HomePage() {
                 className="border-yellow-200 focus:border-yellow-400 text-sm"
               />
             </div>
-
-            {/* Image Upload for Photo Posts */}
-            {(postType === "photo" || postType === "text") && (
-              <div className="space-y-3">
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="file"
-                    id="image-upload"
-                    multiple
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => document.getElementById("image-upload")?.click()}
-                    className="border-yellow-300 hover:bg-yellow-50"
-                  >
-                    <Upload className="h-4 w-4 mr-2" />
-                    Add Photos
-                  </Button>
-                </div>
-
-                {/* Image Preview */}
-                {selectedImages.length > 0 && (
-                  <div className="grid grid-cols-2 gap-2">
-                    {selectedImages.map((image, index) => (
-                      <motion.div
-                        key={index}
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="relative group"
-                      >
-                        <img
-                          src={image || "/placeholder.svg"}
-                          alt={`Upload ${index + 1}`}
-                          className="w-full h-24 object-cover rounded-lg"
-                        />
-                        <Button
-                          size="icon"
-                          variant="destructive"
-                          className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => removeImage(index)}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </motion.div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Poll Options for Poll Posts */}
-            {postType === "poll" && (
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-700">Poll Options:</Label>
-                <Input placeholder="Option 1" className="border-yellow-200 focus:border-yellow-400 text-sm" />
-                <Input placeholder="Option 2" className="border-yellow-200 focus:border-yellow-400 text-sm" />
-                <Button variant="ghost" size="sm" className="text-yellow-600 hover:bg-yellow-50">
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add Option
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="file"
+                  id="image-upload"
+                  multiple
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => document.getElementById('image-upload')?.click()}
+                  className="border-yellow-300 hover:bg-yellow-50"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Add Photos
                 </Button>
               </div>
-            )}
+
+              {/* Image Preview */}
+              {selectedImages.length > 0 && (
+                <div className="grid grid-cols-2 gap-2">
+                  {selectedImages.map((image, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="relative group"
+                    >
+                      <img
+                        src={image.url}
+                        alt={`Upload ${index + 1}`}
+                        className="w-full h-24 object-cover rounded-lg"
+                      />
+                      <Button
+                        size="icon"
+                        variant="destructive"
+                        className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => removeImage(index)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </CardHeader>
 
       <CardFooter className="pt-0 px-3 sm:px-6">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between w-full space-y-3 sm:space-y-0">
-          <div className="flex items-center justify-center sm:justify-start space-x-1 sm:space-x-2 overflow-x-auto">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-yellow-600 hover:bg-yellow-50 text-xs sm:text-sm px-2 sm:px-3"
-            >
-              <Smile className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-              Emoji
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-yellow-600 hover:bg-yellow-50 text-xs sm:text-sm px-2 sm:px-3"
-            >
-              <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-              GIF
-            </Button>
-          </div>
-          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="w-full sm:w-auto">
+        <div className="flex justify-end w-full">
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Button
               onClick={handleCreatePost}
               disabled={!postContent.trim()}
-              className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-black hover:from-yellow-500 hover:to-yellow-600 disabled:opacity-50 w-full sm:w-auto text-sm sm:text-base shadow-lg"
+              className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-black hover:from-yellow-500 hover:to-yellow-600 disabled:opacity-50 text-sm sm:text-base shadow-lg"
             >
               <Send className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-              {postType === "poll" ? "Create Poll" : "Post"}
+              Post
             </Button>
           </motion.div>
         </div>
       </CardFooter>
     </Card>
-  )
+  );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-white to-yellow-100/30">
-      {/* Header with glassmorphism effect */}
+    <div>
       <motion.header
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         className="sticky top-0 z-50 bg-white/70 backdrop-blur-xl border-b border-yellow-200/50 shadow-lg"
       >
-        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-between">
+        <div className="mx-auto px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-between">
           <motion.div whileHover={{ scale: 1.05 }} className="flex items-center space-x-2">
-          <svg xmlns="http://www.w3.org/2000/svg" width="42" height="42" viewBox="0 0 42 42" fill="none"><g clip-path="url(#clip0_72_1619)"><rect width="42" height="42" rx="8" fill="#FFCC29"></rect><path fill-rule="evenodd" clip-rule="evenodd" d="M30.5264 22.1245V30.359H22.292V33.6802H30.5264H33.8477V30.359V22.1245H30.5264Z" fill="#0C0C0C"></path><path fill-rule="evenodd" clip-rule="evenodd" d="M8.13477 8.302V11.6233V19.8577H11.456V11.6233H19.6904V8.302H11.456H8.13477Z" fill="#0C0C0C"></path><path d="M19.275 22.3963C19.275 23.9682 19.8334 25.1265 21.1364 25.1265C22.2119 25.1265 22.9772 24.5267 23.9699 23.3064L24.3629 23.6786C23.3701 25.3125 21.8603 26.6776 19.9161 26.6776C17.7238 26.6776 16.4414 25.0851 16.4414 22.8514C16.4414 19.1491 19.337 15.3022 22.9565 15.3022C24.5077 15.3022 25.5418 15.9433 25.5418 17.1844C25.5418 18.0116 25.0041 18.5287 24.1974 18.7149H23.5976C23.701 17.267 23.5356 16.0261 22.5014 16.0261C20.7434 16.0261 19.275 19.6249 19.275 22.3963Z" fill="#0C0C0C"></path></g><defs><clipPath id="clip0_72_1619"><rect width="42" height="42" rx="8" fill="white"></rect></clipPath></defs></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="42" height="42" viewBox="0 0 42 42" fill="none">
+              <g clip-path="url(#clip0_72_1619)">
+                <rect width="42" height="42" rx="8" fill="#FFCC29"></rect>
+                <path
+                  fill-rule="evenodd"
+                  clip-rule="evenodd"
+                  d="M30.5264 22.1245V30.359H22.292V33.6802H30.5264H33.8477V30.359V22.1245H30.5264Z"
+                  fill="#0C0C0C"
+                ></path>
+                <path
+                  fill-rule="evenodd"
+                  clip-rule="evenodd"
+                  d="M8.13477 8.302V11.6233V19.8577H11.456V11.6233H19.6904V8.302H11.456H8.13477Z"
+                  fill="#0C0C0C"
+                ></path>
+                <path
+                  d="M19.275 22.3963C19.275 23.9682 19.8334 25.1265 21.1364 25.1265C22.2119 25.1265 22.9772 24.5267 23.9699 23.3064L24.3629 23.6786C23.3701 25.3125 21.8603 26.6776 19.9161 26.6776C17.7238 26.6776 16.4414 25.0851 16.4414 22.8514C16.4414 19.1491 19.337 15.3022 22.9565 15.3022C24.5077 15.3022 25.5418 15.9433 25.5418 17.1844C25.5418 18.0116 25.0041 18.5287 24.1974 18.7149H23.5976C23.701 17.267 23.5356 16.0261 22.5014 16.0261C20.7434 16.0261 19.275 19.6249 19.275 22.3963Z"
+                  fill="#0C0C0C"
+                ></path>
+              </g>
+              <defs>
+                <clipPath id="clip0_72_1619">
+                  <rect width="42" height="42" rx="8" fill="white"></rect>
+                </clipPath>
+              </defs>
+            </svg>
             <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-black to-gray-700 bg-clip-text text-transparent">
               CityScope
             </span>
@@ -330,7 +418,7 @@ export default function HomePage() {
 
           <div className="flex items-center space-x-2 sm:space-x-4">
             {/* Filter Button */}
-            <Sheet>
+            <Sheet open={isFilterSheetOpen} onOpenChange={setIsFilterSheetOpen}>
               <SheetTrigger asChild>
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                   <Button variant="outline" size="icon" className="border-yellow-300 hover:bg-yellow-50 shadow-md">
@@ -343,17 +431,20 @@ export default function HomePage() {
                   <SheetTitle className="text-xl font-bold">Filter Posts</SheetTitle>
                   <SheetDescription>Choose how you want to see your feed</SheetDescription>
                 </SheetHeader>
-                <div className="mt-6 space-y-4">
-                  {filterOptions.map((option) => (
+                <div className="mt-6 space-y-4 px-4">
+                  {postTypes.map((option) => (
                     <motion.div key={option.value} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                       <Button
-                        variant={selectedFilter === option.value ? "default" : "outline"}
+                        variant={selectedFilter === option.value ? 'default' : 'outline'}
                         className={`w-full justify-start shadow-md ${
                           selectedFilter === option.value
-                            ? "bg-gradient-to-r from-yellow-400 to-yellow-500 text-black hover:from-yellow-500 hover:to-yellow-600"
-                            : "border-yellow-300 hover:bg-yellow-50"
+                            ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-black hover:from-yellow-500 hover:to-yellow-600'
+                            : 'border-yellow-300 hover:bg-yellow-50'
                         }`}
-                        onClick={() => setSelectedFilter(option.value)}
+                        onClick={() => {
+                          setSelectedFilter(option.value);
+                          setIsFilterSheetOpen(false);
+                        }}
                       >
                         <option.icon className="mr-2 h-4 w-4" />
                         {option.label}
@@ -371,21 +462,23 @@ export default function HomePage() {
                   <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                     <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                       <Avatar className="h-10 w-10 border-2 border-yellow-400 shadow-lg">
-                        <AvatarImage src="/placeholder.svg?height=40&width=40" alt="User" />
+                        <AvatarImage src={user.profilePicture} alt="User" />
                         <AvatarFallback className="bg-gradient-to-r from-yellow-100 to-yellow-200 text-black">
-                          JD
+                          {user.name ? user.name.charAt(0) : user.username.charAt(0)}
                         </AvatarFallback>
                       </Avatar>
                     </Button>
                   </motion.div>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end">
-                  <DropdownMenuItem className="hover:bg-yellow-50">
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Profile</span>
-                  </DropdownMenuItem>
+                  <Link to="/profile">
+                    <DropdownMenuItem className="hover:bg-yellow-50">
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Profile</span>
+                    </DropdownMenuItem>
+                  </Link>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="hover:bg-red-50 text-red-600" onClick={() => setIsLoggedIn(false)}>
+                  <DropdownMenuItem className="hover:bg-red-50 text-red-600" onClick={() => logout()}>
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Log out</span>
                   </DropdownMenuItem>
@@ -394,7 +487,7 @@ export default function HomePage() {
             ) : (
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                 <Button
-                  onClick={() => setIsLoggedIn(true)}
+                  onClick={() => navigate('/login')}
                   className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-black hover:from-yellow-500 hover:to-yellow-600 shadow-lg"
                 >
                   <LogIn className="mr-2 h-4 w-4" />
@@ -409,7 +502,6 @@ export default function HomePage() {
       {/* Main Content */}
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-2xl">
         <div className="space-y-4 sm:space-y-8">
-          {/* Create Post Section */}
           {isLoggedIn && (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
               <CreatePostForm />
@@ -427,150 +519,210 @@ export default function HomePage() {
               <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-black to-gray-700 bg-clip-text text-transparent">
                 Your Feed
               </h2>
-              <Badge
-                variant="secondary"
-                className="bg-gradient-to-r from-yellow-100 to-yellow-200 text-yellow-800 text-xs sm:text-sm shadow-md"
-              >
-                {selectedFilter.charAt(0).toUpperCase() + selectedFilter.slice(1)}
-              </Badge>
+              {selectedFilter && (
+                <Badge
+                  variant="secondary"
+                  className="text-yellow-800 text-xs sm:text-sm shadow-md cursor-pointer flex items-center gap-2"
+                  onClick={() => setSelectedFilter('')}
+                >
+                  {postTypes.find((t) => t.value === selectedFilter)?.label} <X className="h-4 w-4" />
+                </Badge>
+              )}
             </div>
 
-            <AnimatePresence>
-              {mockPosts.map((post, index) => (
-                <motion.div
-                  key={post.id}
-                  initial={{ opacity: 0, y: 50 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -50 }}
-                  transition={{ delay: index * 0.1 }}
-                  whileHover={{ y: -4, scale: 1.01 }}
-                >
-                  <Card className="border-yellow-200/50 shadow-xl hover:shadow-2xl transition-all duration-300 mx-1 sm:mx-0 bg-white/80 backdrop-blur-sm">
+            {/* Loading skeleton for initial load */}
+            {initialLoading ? (
+              <div className="space-y-4">
+                {[...Array(3)].map((_, index) => (
+                  <Card
+                    key={index}
+                    className="border-yellow-200/50 shadow-xl mx-1 sm:mx-0 bg-white/80 backdrop-blur-sm"
+                  >
                     <CardHeader className="pb-3 px-3 sm:px-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <Avatar className="h-8 w-8 sm:h-10 sm:w-10 border-2 border-yellow-400 flex-shrink-0 shadow-lg">
-                            <AvatarImage src={post.user.avatar || "/placeholder.svg"} alt={post.user.name} />
-                            <AvatarFallback className="bg-gradient-to-r from-yellow-100 to-yellow-200 text-black text-xs sm:text-sm">
-                              {post.user.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="min-w-0 flex-1">
-                            <p className="font-semibold text-black text-sm sm:text-base truncate">{post.user.name}</p>
-                            <div className="flex items-center space-x-1 text-xs sm:text-sm text-gray-600">
-                              <span className="truncate">{post.user.username}</span>
-                              <span>•</span>
-                              <span>{post.timestamp}</span>
-                              {post.location && (
-                                <>
-                                  <span>•</span>
-                                  <MapPin className="h-3 w-3" />
-                                  <span className="truncate">{post.location}</span>
-                                </>
-                              )}
-                            </div>
-                          </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="h-10 w-10 bg-gray-200 rounded-full animate-pulse"></div>
+                        <div className="space-y-2 flex-1">
+                          <div className="h-4 bg-gray-200 rounded animate-pulse w-1/4"></div>
+                          <div className="h-3 bg-gray-200 rounded animate-pulse w-1/3"></div>
                         </div>
-                        <Badge variant="outline" className="text-xs border-yellow-300 text-yellow-700 bg-yellow-50">
-                          {postTypes.find((t) => t.value === post.type)?.label}
-                        </Badge>
                       </div>
                     </CardHeader>
-
                     <CardContent className="pb-3 px-3 sm:px-6">
-                      <p className="text-black mb-3 text-sm sm:text-base leading-relaxed">{post.content}</p>
-                      {post.image && (
-                        <motion.div
-                          whileHover={{ scale: 1.02 }}
-                          className="rounded-xl overflow-hidden -mx-3 sm:mx-0 shadow-lg"
-                        >
-                          <img
-                            src={post.image || "/placeholder.svg"}
-                            alt="Post content"
-                            className="w-full h-48 sm:h-64 object-cover"
-                          />
-                        </motion.div>
-                      )}
-                      {post.tags && (
-                        <div className="flex flex-wrap gap-1 sm:gap-2 mt-3">
-                          {post.tags.map((tag, tagIndex) => (
-                            <motion.div key={tagIndex} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                              <Badge
-                                variant="secondary"
-                                className="bg-gradient-to-r from-yellow-100 to-yellow-200 text-yellow-800 hover:from-yellow-200 hover:to-yellow-300 cursor-pointer text-xs sm:text-sm shadow-sm"
-                              >
-                                {tag}
-                              </Badge>
-                            </motion.div>
-                          ))}
-                        </div>
-                      )}
-                    </CardContent>
-
-                    <CardFooter className="pt-0 px-3 sm:px-6">
-                      <div className="flex items-center justify-between w-full">
-                        <div className="flex items-center space-x-3 sm:space-x-4">
-                          <motion.button
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
-                            onClick={() => handleLike(post.id)}
-                            className="flex items-center space-x-1 text-gray-600 hover:text-red-500 transition-colors p-1 sm:p-0"
-                          >
-                            <Heart
-                              className={`h-4 w-4 sm:h-5 sm:w-5 ${
-                                likedPosts.includes(post.id) ? "fill-red-500 text-red-500" : ""
-                              }`}
-                            />
-                            <span className="text-xs sm:text-sm">
-                              {post.likes + (likedPosts.includes(post.id) ? 1 : 0)}
-                            </span>
-                          </motion.button>
-
-                          <motion.button
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
-                            className="flex items-center space-x-1 text-gray-600 hover:text-blue-500 transition-colors p-1 sm:p-0"
-                          >
-                            <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5" />
-                            <span className="text-xs sm:text-sm">{post.comments}</span>
-                          </motion.button>
-
-                          <motion.button
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
-                            className="flex items-center space-x-1 text-gray-600 hover:text-green-500 transition-colors p-1 sm:p-0"
-                          >
-                            <Share2 className="h-4 w-4 sm:h-5 sm:w-5" />
-                            <span className="text-xs sm:text-sm">{post.shares}</span>
-                          </motion.button>
-                        </div>
-
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={() => handleSave(post.id)}
-                          className={`text-gray-600 hover:text-yellow-500 transition-colors p-1 sm:p-0 ${
-                            savedPosts.includes(post.id) ? "text-yellow-500" : ""
-                          }`}
-                        >
-                          <Bookmark
-                            className={`h-4 w-4 sm:h-5 sm:w-5 ${savedPosts.includes(post.id) ? "fill-yellow-500" : ""}`}
-                          />
-                        </motion.button>
+                      <div className="space-y-2">
+                        <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                        <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
                       </div>
-                    </CardFooter>
+                    </CardContent>
                   </Card>
-                </motion.div>
-              ))}
-            </AnimatePresence>
+                ))}
+              </div>
+            ) : (
+              <AnimatePresence>
+                {posts.map((post, index) => (
+                  <motion.div
+                    key={post._id}
+                    initial={{ opacity: 0, y: 50 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -50 }}
+                    transition={{ delay: index * 0.1 }}
+                    whileHover={{ y: -4, scale: 1.01 }}
+                  >
+                    <Card className="border-yellow-200/50 shadow-xl hover:shadow-2xl transition-all duration-300 mx-1 sm:mx-0 bg-white/80 backdrop-blur-sm">
+                      <CardHeader className="pb-2 sm:pb-3 px-2 sm:px-6">
+                        <div className="flex items-start sm:items-center justify-between gap-2 sm:gap-3">
+                          <div className="flex items-start sm:items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                            <Avatar className="h-8 w-8 sm:h-10 sm:w-10 border-2 border-yellow-400 flex-shrink-0 shadow-lg">
+                              <AvatarImage src={post.author?.profilePicture} alt={post.author.name} />
+                              <AvatarFallback className="bg-gradient-to-r from-yellow-100 to-yellow-200 text-black text-xs sm:text-sm">
+                                {post.author.name.charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2">
+                                <p className="font-semibold text-black text-sm sm:text-base truncate">
+                                  {post.author.name}
+                                </p>
+                                <Badge
+                                  variant="outline"
+                                  className="hidden sm:inline-flex text-xs border-yellow-300 text-yellow-700 bg-yellow-50"
+                                >
+                                  {postTypes.find((t) => t.value === post.type)?.label}
+                                </Badge>
+                              </div>
+                              <div className="flex flex-wrap items-center gap-x-1.5 text-[11px] sm:text-sm text-gray-600">
+                                <span className="truncate max-w-[120px] sm:max-w-none">{post.author.username}</span>
+                                <span className="hidden sm:inline">•</span>
+                                <span className="text-[10px] sm:text-sm">
+                                  {new Date(post.createdAt).toLocaleString()}
+                                </span>
+                                {post.location && (
+                                  <>
+                                    <span className="hidden sm:inline">•</span>
+                                    <div className="flex items-center gap-1">
+                                      <MapPin className="h-3 w-3 flex-shrink-0" />
+                                      <span className="truncate max-w-[100px] sm:max-w-none">{post.location}</span>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <Badge
+                            variant="outline"
+                            className="sm:hidden text-[10px] border-yellow-300 text-yellow-700 bg-yellow-50"
+                          >
+                            {postTypes.find((t) => t.value === post.type)?.label}
+                          </Badge>
+                        </div>
+                      </CardHeader>
+
+                      <CardContent className="pb-3 px-3 sm:px-6">
+                        <p className="text-black mb-3 text-sm sm:text-base leading-relaxed">{post.content}</p>
+                        {post.images && post.images.length > 0 && (
+                          <div className="space-y-2">
+                            {post.images.length === 1 ? (
+                              <motion.div
+                                whileHover={{ scale: 1.02 }}
+                                className="rounded-xl overflow-hidden -mx-3 sm:mx-0 shadow-lg"
+                              >
+                                <img
+                                  src={post.images[0]}
+                                  alt="Post content"
+                                  className="w-full h-48 sm:h-64 object-contain"
+                                />
+                              </motion.div>
+                            ) : (
+                              <div className="grid grid-cols-2 gap-2 p-2 -mx-3 sm:mx-0">
+                                {post.images.map((image, index) => (
+                                  <motion.div
+                                    key={index}
+                                    whileHover={{ scale: 1.02 }}
+                                    className="rounded-xl overflow-hidden shadow-lg"
+                                  >
+                                    <img
+                                      src={image}
+                                      alt={`Post content ${index + 1}`}
+                                      className="w-full h-32 sm:h-48 object-contain"
+                                    />
+                                  </motion.div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </CardContent>
+
+                      <CardFooter className="pt-0 px-3 sm:px-6">
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center space-x-3 sm:space-x-4">
+                            <motion.button
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              onClick={() => handleLike(post._id)}
+                              className="flex items-center space-x-1 text-gray-600 hover:text-red-500 transition-colors p-1 sm:p-0"
+                            >
+                              <Heart
+                                className={`h-4 w-4 sm:h-5 sm:w-5 ${
+                                  post.likes.some((like) => like.user._id === user?.id)
+                                    ? 'fill-red-500 text-red-500'
+                                    : ''
+                                }`}
+                              />
+                              <span className="text-xs sm:text-sm">{post.likes.length}</span>
+                            </motion.button>
+
+                            <motion.button
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              className="flex items-center space-x-1 text-gray-600 hover:text-blue-500 transition-colors p-1 sm:p-0"
+                              onClick={() => handleOpenComments(post)}
+                            >
+                              <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5" />
+                              <span className="text-xs sm:text-sm">{post.comments.length}</span>
+                            </motion.button>
+                          </div>
+                        </div>
+                      </CardFooter>
+                    </Card>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            )}
+
+            {/* Loading indicator for infinite scroll */}
+            {loading && !initialLoading && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex justify-center py-8"
+              >
+                <div className="flex items-center space-x-2 text-gray-600">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                  <span className="text-sm">Loading more posts...</span>
+                </div>
+              </motion.div>
+            )}
+
+            {/* End of posts indicator */}
+            {!hasNextPage && posts.length > 0 && !initialLoading && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex justify-center py-8"
+              >
+                <div className="text-center">
+                  <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-r from-yellow-100 to-yellow-200 rounded-full mb-4">
+                    <Sparkles className="h-6 w-6 text-yellow-600" />
+                  </div>
+                  <p className="text-gray-600 text-sm">You've reached the end!</p>
+                  <p className="text-gray-500 text-xs mt-1">No more posts to show</p>
+                </div>
+              </motion.div>
+            )}
           </motion.div>
         </div>
       </main>
 
-      {/* Floating Action Button */}
       <AnimatePresence>
         {showFAB && isLoggedIn && (
           <motion.div
@@ -584,18 +736,13 @@ export default function HomePage() {
                 <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} className="relative">
                   <Button
                     size="icon"
-                    className="h-14 w-14 rounded-full bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-400 text-black hover:from-yellow-500 hover:via-yellow-600 hover:to-orange-500 shadow-2xl border-2 border-white"
+                    className="h-14 w-14 rounded-full bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-400 text-black hover:from-yellow-500 hover:via-yellow-600 hover:to-orange-500 shadow-2xl border-white"
                   >
                     <Plus className="h-6 w-6" />
                   </Button>
-                  <motion.div
-                    className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full"
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ repeat: Number.POSITIVE_INFINITY, duration: 2 }}
-                  />
                 </motion.div>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto bg-gradient-to-b from-white to-yellow-50">
+              <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle className="text-xl font-bold bg-gradient-to-r from-black to-gray-700 bg-clip-text text-transparent">
                     Create New Post
@@ -608,6 +755,89 @@ export default function HomePage() {
           </motion.div>
         )}
       </AnimatePresence>
+      {/* Comments Drawer */}
+      <Drawer open={isCommentsOpen} onOpenChange={setIsCommentsOpen}>
+        <DrawerContent className="max-h-[80vh]">
+          <DrawerHeader className="border-b border-yellow-200">
+            <DrawerTitle className="text-lg font-bold">Comments</DrawerTitle>
+            <DrawerDescription>
+              {selectedPostComments && `${selectedPostComments.comments?.length || 0} comments on this post`}
+            </DrawerDescription>
+          </DrawerHeader>
+
+          <div className="flex flex-col h-full">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {selectedPostComments?.comments?.map((comment) => (
+                <motion.div
+                  key={comment._id || comment.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex space-x-3"
+                >
+                  <Avatar className="h-8 w-8 border-2 border-yellow-400 flex-shrink-0">
+                    <AvatarImage src={comment.user?.profilePicture} alt={comment.user?.name} />
+                    <AvatarFallback className="bg-gradient-to-r from-yellow-100 to-yellow-200 text-black text-xs">
+                      {comment.user?.name?.charAt(0) || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="bg-gray-50 rounded-2xl px-3 py-2">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <span className="font-semibold text-sm text-black">{comment.user?.name || 'Unknown User'}</span>
+                        <span className="text-xs text-gray-500">{new Date(comment.createdAt).toLocaleString()}</span>
+                      </div>
+                      <p className="text-sm text-black leading-relaxed">{comment.content}</p>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+
+              {selectedPostComments &&
+                (!selectedPostComments.comments || selectedPostComments.comments.length === 0) && (
+                  <div className="text-center py-8">
+                    <MessageCircle className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-500">No comments yet</p>
+                    <p className="text-gray-400 text-sm">Be the first to comment!</p>
+                  </div>
+                )}
+            </div>
+
+            {isLoggedIn && (
+              <div className="border-t border-yellow-200 p-4">
+                <div className="flex space-x-3">
+                  <Avatar className="h-8 w-8 border-2 border-yellow-400 flex-shrink-0">
+                    <AvatarImage src={user.profilePicture} alt={user.name} />
+                    <AvatarFallback className="bg-gradient-to-r from-yellow-100 to-yellow-200 text-black text-xs">
+                      {user.name ? user.name.charAt(0) : user.username.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+
+                  <div className="flex-1 flex space-x-2">
+                    <Input
+                      placeholder="Write a comment..."
+                      value={commentText}
+                      onChange={(e) => setCommentText(e.target.value)}
+                      className="flex-1 border-yellow-200 focus:border-yellow-400"
+                      onKeyPress={(e) => e.key === 'Enter' && handleAddComment()}
+                    />
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                      <Button
+                        onClick={handleAddComment}
+                        disabled={!commentText.trim()}
+                        size="sm"
+                        className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-black hover:from-yellow-500 hover:to-yellow-600 disabled:opacity-50"
+                      >
+                        <Send className="h-4 w-4" />
+                      </Button>
+                    </motion.div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </DrawerContent>
+      </Drawer>
     </div>
-  )
+  );
 }
