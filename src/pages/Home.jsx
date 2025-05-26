@@ -613,7 +613,7 @@ export default function HomePage() {
                   </Button>
                 </motion.div>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+              <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto bg-white">
                 <DialogHeader>
                   <DialogTitle className="text-xl font-bold bg-gradient-to-r from-black to-gray-700 bg-clip-text text-transparent">
                     Create New Post
