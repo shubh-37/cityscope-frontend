@@ -641,7 +641,7 @@ export default function HomePage() {
       </AnimatePresence>
       {/* Comments Drawer */}
       <Drawer open={isCommentsOpen} onOpenChange={setIsCommentsOpen}>
-        <DrawerContent className="max-h-[80vh]">
+        <DrawerContent className="max-h-[80vh] bg-white border border-yellow-400">
           <DrawerHeader className="border-b border-yellow-200">
             <DrawerTitle className="text-lg font-bold">Comments</DrawerTitle>
             <DrawerDescription>
