@@ -16,31 +16,49 @@ import {
 import { ArrowLeft, Calendar, Heart, MessageCircle, Share2, Edit3, X, Save, Plus, Camera } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { authContext } from '@/context/AuthContextProvider';
-
-const user = JSON.parse(localStorage.getItem('user'));
+import { toast } from 'sonner';
 
 export default function ProfilePage() {
-  const { getPostsByUser } = useContext(authContext);
+  const { getPostsByUser, editUser } = useContext(authContext);
   const [userPosts, setUserPosts] = useState([]);
-  const [likedPosts, setLikedPosts] = useState([]);
   const [isPhotoDialogOpen, setIsPhotoDialogOpen] = useState(false);
   const [isEditingBio, setIsEditingBio] = useState(false);
+  const [user, setUser] = useState({
+    name: '',
+    username: '',
+    bio: '',
+    profilePic: '',
+    createdAt: ''
+  });
   const [bioText, setBioText] = useState(user.bio);
+  const [imageTimestamp, setImageTimestamp] = useState(Date.now());
 
-  const handleLike = (postId) => {
-    setLikedPosts((prev) => (prev.includes(postId) ? prev.filter((id) => id !== postId) : [...prev, postId]));
+  const handleSaveBio = async () => {
+    const formData = new FormData();
+    formData.append('bio', bioText);
+    const response = await editUser(formData);
+    if (response.message) {
+      toast.success(response.message);
+      setUser(response.user);
+      setIsEditingBio(!isEditingBio);
+    } else {
+      toast.error(response);
+    }
   };
 
-  const handleSaveBio = () => {
-    // Handle bio save logic here
-    console.log('Saving bio:', bioText);
-    setIsEditingBio(false);
-  };
-
-  const handlePhotoUpload = (event) => {
+  const handlePhotoUpload = async (event) => {
     const file = event.target.files?.[0];
     if (file) {
-      console.log('Uploading photo:', file);
+      const formData = new FormData();
+      formData.append('image', file);
+      const response = await editUser(formData);
+      if (response.message) {
+        toast.success(response.message);
+        setUser(response.user);
+        setImageTimestamp(Date.now());
+      } else {
+        toast.error(response);
+      }
       setIsPhotoDialogOpen(false);
     }
   };
@@ -49,6 +67,8 @@ export default function ProfilePage() {
     const fetchUserPosts = async () => {
       const response = await getPostsByUser();
       setUserPosts(response.posts);
+      setUser(response.user);
+      setBioText(response.user.bio);
     };
     fetchUserPosts();
   }, []);
@@ -94,7 +114,7 @@ export default function ProfilePage() {
               className="relative"
             >
               <Avatar className="h-24 w-24 sm:h-32 sm:w-32 border-4 border-white shadow-xl">
-                <AvatarImage src={user.profilePicture || '/placeholder.svg'} alt={user?.name} />
+                <AvatarImage src={`${user.profilePic}?t=${imageTimestamp}`} alt={user?.name} />
                 <AvatarFallback className="bg-gradient-to-r from-yellow-100 to-yellow-200 text-black text-2xl sm:text-3xl">
                   {user?.name ? user?.name.charAt(0) : user?.username.charAt(0)}
                 </AvatarFallback>
@@ -111,7 +131,7 @@ export default function ProfilePage() {
                     <Camera className="h-4 w-4 text-black" />
                   </motion.div>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="sm:max-w-md bg-white border border-yellow-400">
                   <DialogHeader>
                     <DialogTitle>Update Profile Photo</DialogTitle>
                     <DialogDescription>Choose a new profile photo to upload</DialogDescription>
@@ -178,7 +198,17 @@ export default function ProfilePage() {
                 ) : (
                   <div className="relative group">
                     {bioText ? (
-                      <p className="text-black leading-relaxed flex-grow">{bioText}</p>
+                      <div className="flex items-center justify-between">
+                        <p className="text-black leading-relaxed flex-grow">{bioText}</p>
+                        <Button
+                          onClick={() => setIsEditingBio(true)}
+                          size="sm"
+                          variant="ghost"
+                          className="text-yellow-600 hover:bg-yellow-50 transition-opacity"
+                        >
+                          <Edit3 className="h-3 w-3" />
+                        </Button>
+                      </div>
                     ) : (
                       <div className="text-center py-2 px-4 rounded-lg border-2 border-dashed border-yellow-200 bg-yellow-50/50">
                         <p className="text-gray-500 text-sm">No bio yet</p>
@@ -229,7 +259,7 @@ export default function ProfilePage() {
                     <CardHeader className="pb-3">
                       <div className="flex items-center space-x-3">
                         <Avatar className="h-10 w-10 border-2 border-yellow-400">
-                          <AvatarImage src={user.profilePicture || '/placeholder.svg'} alt={user?.name} />
+                          <AvatarImage src={`${user.profilePic}?t=${imageTimestamp}`} alt={user?.name} />
                           <AvatarFallback className="bg-gradient-to-r from-yellow-100 to-yellow-200 text-black">
                             {user?.name ? user?.name.charAt(0) : user?.username.charAt(0)}
                           </AvatarFallback>
@@ -247,11 +277,7 @@ export default function ProfilePage() {
                       <p className="text-black mb-3 leading-relaxed">{post.content || 'No content'}</p>
                       {post.images && Array.isArray(post.images) && post.images.length > 0 && (
                         <motion.div whileHover={{ scale: 1.02 }} className="rounded-xl overflow-hidden shadow-lg">
-                          <img
-                            src={post.images[0] || '/placeholder.svg'}
-                            alt="Post content"
-                            className="w-full h-64 object-cover"
-                          />
+                          <img src={post.images[0]} alt="Post content" className="w-full h-64 object-cover" />
                         </motion.div>
                       )}
                     </CardContent>
@@ -261,7 +287,6 @@ export default function ProfilePage() {
                         <motion.button
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
-                          onClick={() => handleLike(post._id)}
                           className="flex items-center space-x-1 text-gray-600 hover:text-red-500 transition-colors"
                         >
                           <Heart
