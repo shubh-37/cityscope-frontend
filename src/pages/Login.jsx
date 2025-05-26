@@ -8,6 +8,7 @@ import { Eye, EyeOff, Lock, ArrowLeft, Sparkles, User } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authContext } from '@/context/AuthContextProvider';
 import { toast } from 'sonner';
+import logo from '@/assets/logo.svg';
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -76,32 +77,7 @@ export default function LoginPage() {
             transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
             className="flex items-center justify-center space-x-2 mb-4"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="42" height="42" viewBox="0 0 42 42" fill="none">
-              <g clip-path="url(#clip0_72_1619)">
-                <rect width="42" height="42" rx="8" fill="#FFCC29"></rect>
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M30.5264 22.1245V30.359H22.292V33.6802H30.5264H33.8477V30.359V22.1245H30.5264Z"
-                  fill="#0C0C0C"
-                ></path>
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M8.13477 8.302V11.6233V19.8577H11.456V11.6233H19.6904V8.302H11.456H8.13477Z"
-                  fill="#0C0C0C"
-                ></path>
-                <path
-                  d="M19.275 22.3963C19.275 23.9682 19.8334 25.1265 21.1364 25.1265C22.2119 25.1265 22.9772 24.5267 23.9699 23.3064L24.3629 23.6786C23.3701 25.3125 21.8603 26.6776 19.9161 26.6776C17.7238 26.6776 16.4414 25.0851 16.4414 22.8514C16.4414 19.1491 19.337 15.3022 22.9565 15.3022C24.5077 15.3022 25.5418 15.9433 25.5418 17.1844C25.5418 18.0116 25.0041 18.5287 24.1974 18.7149H23.5976C23.701 17.267 23.5356 16.0261 22.5014 16.0261C20.7434 16.0261 19.275 19.6249 19.275 22.3963Z"
-                  fill="#0C0C0C"
-                ></path>
-              </g>
-              <defs>
-                <clipPath id="clip0_72_1619">
-                  <rect width="42" height="42" rx="8" fill="white"></rect>
-                </clipPath>
-              </defs>
-            </svg>
+            <img src={logo} alt="CityScope" className="h-10 w-10" />
             <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-black to-gray-700 bg-clip-text text-transparent">
               CityScope
             </span>
