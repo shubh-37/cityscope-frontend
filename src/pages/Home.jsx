@@ -70,6 +70,7 @@ export default function HomePage() {
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   const [selectedPostComments, setSelectedPostComments] = useState(null);
   const [commentText, setCommentText] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   // Infinite scrolling states
   const [currentPage, setCurrentPage] = useState(1);
@@ -181,27 +182,34 @@ export default function HomePage() {
   };
 
   const handleCreatePost = async () => {
-    const formData = new FormData();
-    formData.append('content', postContent);
-    formData.append('location', location);
-    formData.append('type', postType);
+    try {
+      setIsLoading(true);
+      const formData = new FormData();
+      formData.append('content', postContent);
+      formData.append('location', location);
+      formData.append('type', postType);
 
-    // Store the actual File objects instead of just URLs
-    if (selectedImages.length > 0) {
-      selectedImages.forEach((image) => {
-        formData.append('images', image.file);
-      });
-    }
-    const response = await createPost(formData);
-    if (response.success) {
-      // Reset form state
-      setPostContent('');
-      setLocation('');
-      setSelectedImages([]);
-      setPostType('');
-      toast.success(response.message);
-      await fetchPosts(1, true);
-      setIsModalOpen(false);
+      // Store the actual File objects instead of just URLs
+      if (selectedImages.length > 0) {
+        selectedImages.forEach((image) => {
+          formData.append('images', image.file);
+        });
+      }
+      const response = await createPost(formData);
+      if (response.success) {
+        // Reset form state
+        setPostContent('');
+        setLocation('');
+        setSelectedImages([]);
+        setPostType('');
+        toast.success(response.message);
+        await fetchPosts(1, true);
+        setIsModalOpen(false);
+      }
+    } catch (error) {
+      toast.error(error.response.data.error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -231,7 +239,7 @@ export default function HomePage() {
 
     try {
       const response = await createComment(selectedPostComments._id, { content: commentText });
-      if (response.success) {
+      if (response.message) {
         // Update the posts array with the new comment
         setPosts(
           posts.map((post) => {
@@ -244,15 +252,13 @@ export default function HomePage() {
             return post;
           })
         );
-
-        // Update the selected post comments
         setSelectedPostComments((prev) => ({
           ...prev,
           comments: [...prev.comments, response.comment]
         }));
 
         setCommentText('');
-        toast.success('Comment added successfully');
+        toast.success(response.message);
       }
     } catch (err) {
       console.error('Error adding comment:', err);
@@ -375,6 +381,7 @@ export default function HomePage() {
                 handleCreatePost={handleCreatePost}
                 postType={postType}
                 setPostType={setPostType}
+                isLoading={isLoading}
               />
             </motion.div>
           )}
@@ -633,6 +640,7 @@ export default function HomePage() {
                   handleCreatePost={handleCreatePost}
                   postType={postType}
                   setPostType={setPostType}
+                  isLoading={isLoading}
                 />
               </DialogContent>
             </Dialog>
@@ -668,7 +676,9 @@ export default function HomePage() {
                   <div className="flex-1 min-w-0">
                     <div className="bg-gray-50 rounded-2xl px-3 py-2">
                       <div className="flex items-center space-x-2 mb-1">
-                        <span className="font-semibold text-sm text-black">{comment.user?.name || 'Unknown User'}</span>
+                        <span className="font-semibold text-sm text-black">
+                          {comment.user?.name || comment.user?.username}
+                        </span>
                         <span className="text-xs text-gray-500">{new Date(comment.createdAt).toLocaleString()}</span>
                       </div>
                       <p className="text-sm text-black leading-relaxed">{comment.content}</p>

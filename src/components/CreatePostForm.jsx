@@ -27,7 +27,8 @@ export const CreatePostForm = ({
   removeImage,
   handleCreatePost,
   postType,
-  setPostType
+  setPostType,
+  isLoading
 }) => (
   <Card className={`border-yellow-200 shadow-lg ${isModal ? 'border-0 shadow-none' : ''}`}>
     <CardHeader className="pb-3 px-3 sm:px-6">
@@ -130,7 +131,7 @@ export const CreatePostForm = ({
         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
           <Button
             onClick={handleCreatePost}
-            disabled={!postContent.trim()}
+            disabled={!postContent.trim() || isLoading}
             className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-black hover:from-yellow-500 hover:to-yellow-600 disabled:opacity-50 text-sm sm:text-base shadow-lg"
           >
             <Send className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
