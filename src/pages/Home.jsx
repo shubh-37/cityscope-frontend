@@ -143,6 +143,11 @@ export default function HomePage() {
   }, [selectedFilter]); // Refetch when filter changes
 
   const handleLike = async (postId) => {
+    if (!isLoggedIn) {
+      toast.error('Please login to like a post');
+      navigate('/login');
+      return;
+    }
     try {
       await likeUnlikePost(postId);
       setPosts((prevPosts) =>
@@ -183,6 +188,11 @@ export default function HomePage() {
 
   const handleCreatePost = async () => {
     try {
+      if (!isLoggedIn) {
+        toast.error('Please login to create a post');
+        navigate('/login');
+        return;
+      }
       setIsLoading(true);
       const formData = new FormData();
       formData.append('content', postContent);
@@ -235,6 +245,11 @@ export default function HomePage() {
   };
 
   const handleAddComment = async () => {
+    if (!isLoggedIn) {
+      toast.error('Please login to add a comment');
+      navigate('/login');
+      return;
+    }
     if (!commentText.trim()) return;
 
     try {
@@ -471,7 +486,14 @@ export default function HomePage() {
                                 <span className="truncate max-w-[120px] sm:max-w-none">{post.author.username}</span>
                                 <span className="hidden sm:inline">•</span>
                                 <span className="text-[10px] sm:text-sm">
-                                  {new Date(post.createdAt).toLocaleString()}
+                                  {new Date(post.createdAt).toLocaleString(undefined, {
+                                    year: 'numeric',
+                                    month: 'numeric',
+                                    day: 'numeric',
+                                    hour: 'numeric',
+                                    minute: 'numeric',
+                                    hour12: true
+                                  })}
                                 </span>
                                 {post.location && (
                                   <>
@@ -649,87 +671,86 @@ export default function HomePage() {
       </AnimatePresence>
       {/* Comments Drawer */}
       <Drawer open={isCommentsOpen} onOpenChange={setIsCommentsOpen}>
-        <DrawerContent className="max-h-[80vh] bg-white border border-yellow-400">
-          <DrawerHeader className="border-b border-yellow-200">
-            <DrawerTitle className="text-lg font-bold">Comments</DrawerTitle>
-            <DrawerDescription>
+        <DrawerContent className="bg-white border border-yellow-400 max-w-md mx-auto w-full h-[80vh] flex flex-col">
+          <DrawerHeader className="border-b border-yellow-200 flex-shrink-0">
+            <DrawerTitle className="text-lg font-bold text-center">Comments</DrawerTitle>
+            <DrawerDescription className="text-center">
               {selectedPostComments && `${selectedPostComments.comments?.length || 0} comments on this post`}
             </DrawerDescription>
           </DrawerHeader>
 
-          <div className="flex flex-col h-full">
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {selectedPostComments?.comments?.map((comment) => (
-                <motion.div
-                  key={comment._id || comment.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex space-x-3"
-                >
-                  <Avatar className="h-8 w-8 border-2 border-yellow-400 flex-shrink-0">
-                    <AvatarImage src={comment.user?.profilePic} alt={comment.user?.name} />
-                    <AvatarFallback className="bg-gradient-to-r from-yellow-100 to-yellow-200 text-black text-xs">
-                      {comment.user?.name?.charAt(0) || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
+          {/* Scrollable comments section */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
+            {selectedPostComments?.comments?.map((comment) => (
+              <motion.div
+                key={comment._id || comment.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex space-x-3"
+              >
+                <Avatar className="h-8 w-8 border-2 border-yellow-400 flex-shrink-0">
+                  <AvatarImage src={comment.user?.profilePic} alt={comment.user?.name} />
+                  <AvatarFallback className="bg-gradient-to-r from-yellow-100 to-yellow-200 text-black text-xs">
+                    {comment.user?.name?.charAt(0) || 'U'}
+                  </AvatarFallback>
+                </Avatar>
 
-                  <div className="flex-1 min-w-0">
-                    <div className="bg-gray-50 rounded-2xl px-3 py-2">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <span className="font-semibold text-sm text-black">
-                          {comment.user?.name || comment.user?.username}
-                        </span>
-                        <span className="text-xs text-gray-500">{new Date(comment.createdAt).toLocaleString()}</span>
-                      </div>
-                      <p className="text-sm text-black leading-relaxed">{comment.content}</p>
+                <div className="flex-1 min-w-0">
+                  <div className="bg-gray-50 rounded-2xl px-3 py-2">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <span className="font-semibold text-sm text-black">
+                        {comment.user?.name || comment.user?.username}
+                      </span>
+                      <span className="text-xs text-gray-500">{new Date(comment.createdAt).toLocaleString()}</span>
                     </div>
-                  </div>
-                </motion.div>
-              ))}
-
-              {selectedPostComments &&
-                (!selectedPostComments.comments || selectedPostComments.comments.length === 0) && (
-                  <div className="text-center py-8">
-                    <MessageCircle className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-500">No comments yet</p>
-                    <p className="text-gray-400 text-sm">Be the first to comment!</p>
-                  </div>
-                )}
-            </div>
-
-            {isLoggedIn && (
-              <div className="border-t border-yellow-200 p-4">
-                <div className="flex space-x-3">
-                  <Avatar className="h-8 w-8 border-2 border-yellow-400 flex-shrink-0">
-                    <AvatarImage src={user.profilePic} alt={user.name} />
-                    <AvatarFallback className="bg-gradient-to-r from-yellow-100 to-yellow-200 text-black text-xs">
-                      {user.name ? user.name.charAt(0) : user.username.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-
-                  <div className="flex-1 flex space-x-2">
-                    <Input
-                      placeholder="Write a comment..."
-                      value={commentText}
-                      onChange={(e) => setCommentText(e.target.value)}
-                      className="flex-1 border-yellow-200 focus:border-yellow-400"
-                      onKeyPress={(e) => e.key === 'Enter' && handleAddComment()}
-                    />
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <Button
-                        onClick={handleAddComment}
-                        disabled={!commentText.trim()}
-                        size="sm"
-                        className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-black hover:from-yellow-500 hover:to-yellow-600 disabled:opacity-50"
-                      >
-                        <Send className="h-4 w-4" />
-                      </Button>
-                    </motion.div>
+                    <p className="text-sm text-black leading-relaxed">{comment.content}</p>
                   </div>
                 </div>
+              </motion.div>
+            ))}
+
+            {selectedPostComments && (!selectedPostComments.comments || selectedPostComments.comments.length === 0) && (
+              <div className="text-center py-8">
+                <MessageCircle className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500">No comments yet</p>
+                <p className="text-gray-400 text-sm">Be the first to comment!</p>
               </div>
             )}
           </div>
+
+          {/* Fixed comment input at bottom */}
+          {isLoggedIn && (
+            <div className="border-t border-yellow-200 p-4 flex-shrink-0 bg-white">
+              <div className="flex space-x-3">
+                <Avatar className="h-8 w-8 border-2 border-yellow-400 flex-shrink-0">
+                  <AvatarImage src={user.profilePic} alt={user.name} />
+                  <AvatarFallback className="bg-gradient-to-r from-yellow-100 to-yellow-200 text-black text-xs">
+                    {user.name ? user.name.charAt(0) : user.username.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+
+                <div className="flex-1 flex space-x-2">
+                  <Input
+                    placeholder="Write a comment..."
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    className="flex-1 border-yellow-200 focus:border-yellow-400"
+                    onKeyPress={(e) => e.key === 'Enter' && handleAddComment()}
+                  />
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button
+                      onClick={handleAddComment}
+                      disabled={!commentText.trim()}
+                      size="sm"
+                      className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-black hover:from-yellow-500 hover:to-yellow-600 disabled:opacity-50"
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </motion.div>
+                </div>
+              </div>
+            </div>
+          )}
         </DrawerContent>
       </Drawer>
     </div>
