@@ -29,6 +29,18 @@ export default function SignupPage() {
 
   const handleSignup = async (e) => {
     e.preventDefault();
+    if (formData.password !== formData.confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+    if (formData.password.length < 7) {
+      toast.error('Password must be at least 6 characters long');
+      return;
+    }
+    if (formData.username.length < 4) {
+      toast.error('Username must be at least 3 characters long');
+      return;
+    }
     const response = await signUpUser(formData);
     if (response.status === 200) {
       toast.success(response.message);

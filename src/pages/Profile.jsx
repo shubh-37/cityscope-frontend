@@ -200,14 +200,6 @@ export default function ProfilePage() {
                     {bioText ? (
                       <div className="flex items-center justify-between">
                         <p className="text-black leading-relaxed flex-grow">{bioText}</p>
-                        <Button
-                          onClick={() => setIsEditingBio(true)}
-                          size="sm"
-                          variant="ghost"
-                          className="text-yellow-600 hover:bg-yellow-50 transition-opacity"
-                        >
-                          <Edit3 className="h-3 w-3" />
-                        </Button>
                       </div>
                     ) : (
                       <div className="text-center py-2 px-4 rounded-lg border-2 border-dashed border-yellow-200 bg-yellow-50/50">
@@ -219,7 +211,7 @@ export default function ProfilePage() {
                       onClick={() => setIsEditingBio(true)}
                       size="sm"
                       variant="ghost"
-                      className={`absolute right-0 top-1/2 -translate-y-1/2 text-yellow-600 hover:bg-yellow-50 transition-opacity ${
+                      className={` text-yellow-600 cursor-pointer transition-opacity ${
                         bioText ? 'opacity-0 group-hover:opacity-100' : 'opacity-100'
                       }`}
                     >
