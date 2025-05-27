@@ -46,14 +46,12 @@ export const CreatePostForm = ({
             </Label>
             <Select value={postType} onValueChange={setPostType}>
               <SelectTrigger className="w-40 h-8 border-yellow-200 focus:border-yellow-400">
-                <SelectValue />
+                <SelectValue placeholder="Select post type" />
               </SelectTrigger>
               <SelectContent className="bg-white border border-yellow-400">
                 {postTypes.map((type) => (
                   <SelectItem key={type.value} value={type.value}>
-                    <div className="flex items-center space-x-2">
-                      <span>{type.label}</span>
-                    </div>
+                    {type.label}
                   </SelectItem>
                 ))}
               </SelectContent>
